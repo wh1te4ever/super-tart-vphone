@@ -2,7 +2,7 @@
 
 # NOTE
 This is not for end-user, really messing/dirty project and most of things are hardcoded patch. Really not appropriate for end-user.
-Also, guides are incomplete though ...
+Also, guides are incomplete and libAppleParavirtCompilerPluginIOGPUFamily is now missing - because I have some little worries if it has copyright issues. It's owned by Apple and most things are taken from PCC there.
 
 # Some guide
 https://github.com/wh1te4ever/super-tart-vphone/blob/main/GUIDE.md
