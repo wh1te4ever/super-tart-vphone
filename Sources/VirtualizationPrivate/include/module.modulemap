@@ -1,0 +1,4 @@
+module VirtualizationPrivate {
+    header "VirtualizationPrivate.h"
+    export *
+}

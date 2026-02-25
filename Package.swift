@@ -26,7 +26,12 @@ let package = Package(
     .package(url: "https://github.com/jozefizso/swift-xattr", from: "3.0.0"),
   ],
   targets: [
+    .target(
+      name: "VirtualizationPrivate",
+      dependencies: []
+    ),
     .executableTarget(name: "tart", dependencies: [
+      "VirtualizationPrivate",
       .product(name: "Algorithms", package: "swift-algorithms"),
       .product(name: "ArgumentParser", package: "swift-argument-parser"),
       .product(name: "Dynamic", package: "Dynamic"),

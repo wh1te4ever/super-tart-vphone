@@ -33,8 +33,8 @@ enum CodingKeys: String, CodingKey {
 }
 
 struct VMDisplayConfig: Codable {
-  var width: Int = 1024
-  var height: Int = 768
+  var width: Int = 1179
+  var height: Int = 2556
 }
 
 extension VMDisplayConfig: CustomStringConvertible {

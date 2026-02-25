@@ -1,0 +1,1 @@
+int jailbreak_get_bmhash(char* hash);

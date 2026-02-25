@@ -20,7 +20,10 @@ struct Create: AsyncParsableCommand {
   var diskSize: UInt16 = 50
     
   @Option(help: ArgumentHelp("Path to custom ROM image (AVPBooter)"))
-  var romPath: String = "/System/Library/Frameworks/Virtualization.framework/Versions/A/Resources/AVPBooter.vmapple2.bin";
+  var romPath: String = "/System/Library/Frameworks/Virtualization.framework/Versions/A/Resources/AVPBooter.vresearch1.bin";
+
+  @Option(help: ArgumentHelp("Path to custom SEP ROM image (AVPSEPBooter)"))
+  var sepromPath: String = "/System/Library/Frameworks/Virtualization.framework/Versions/A/Resources/AVPSEPBooter.vresearch1.bin";
 
   func validate() throws {
     if fromIPSW == nil && !linux {
@@ -64,7 +67,10 @@ struct Create: AsyncParsableCommand {
           let romURL = URL(fileURLWithPath: romPath)
           print("romURL: \(romURL)")
 
-          _ = try await VM(vmDir: tmpVMDir, ipswURL: ipswURL, diskSizeGB: diskSize, romURL: romURL)
+          let sepromURL = URL(fileURLWithPath: sepromPath)
+          print("sepromURL: \(sepromURL)")
+
+          _ = try await VM(vmDir: tmpVMDir, ipswURL: ipswURL, diskSizeGB: diskSize, romURL: romURL, sepromURL: sepromURL)
         }
       #endif
 

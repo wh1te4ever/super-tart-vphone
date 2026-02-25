@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.apple.trollvnc</string>
+	<key>EnablePressuredExit</key>
+	<false/>
+	<key>EnableTransactions</key>
+	<false/>
+	<key>EnvironmentVariables</key>
+	<dict>
+                <key>TROLLVNC_PASSWORD</key>
+		<string>alpine</string>
+		<key>DISABLE_TWEAKS</key>
+		<string>1</string>
+		<key>TROLLVNC_REPEATER_RETRY_INTERVAL</key>
+		<string>30.0</string>
+	</dict>
+	<key>ExitTimeOut</key>
+	<integer>3</integer>
+	<key>GroupName</key>
+	<string>mobile</string>
+	<key>HighPriorityIO</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>Label</key>
+	<string>com.apple.trollvnc</string>
+	<key>POSIXSpawnType</key>
+	<string>App</string>
+	<key>ProcessType</key>
+	<string>Interactive</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/iosbinpack64/bin/trollvncserver</string>
+		<string>-daemon</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/tmp/trollvnc-stderr.log</string>
+	<key>StandardOutPath</key>
+	<string>/tmp/trollvnc-stdout.log</string>
+	<key>ThrottleInterval</key>
+	<integer>5</integer>
+	<key>UserName</key>
+	<string>mobile</string>
+	<key>_AdditionalProperties</key>
+	<dict>
+		<key>RunningBoard</key>
+		<dict>
+			<key>Managed</key>
+			<false/>
+			<key>Reported</key>
+			<false/>
+		</dict>
+	</dict>
+</dict>
+</plist>

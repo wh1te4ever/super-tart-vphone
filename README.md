@@ -1,3 +1,16 @@
+# super-tart-vphone
+
+# NOTE
+This is not for end-user, really messing/dirty project and most of things are hardcoded patch. Really not appropriate for end-user.
+Also, guides are incomplete though ...
+
+# Some guide
+https://github.com/wh1te4ever/super-tart-vphone/blob/main/GUIDE.md
+
+# Writeup 
+https://github.com/wh1te4ever/super-tart-vphone-writeup
+
+# Original Content
 <img src="https://github.com/cirruslabs/tart/raw/main/Resources/TartSocial.png"/>
 
 *Tart* is a virtualization toolset to build, run and manage macOS and Linux virtual machines (VMs) on Apple Silicon.

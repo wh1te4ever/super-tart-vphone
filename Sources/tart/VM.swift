@@ -2,6 +2,7 @@ import Foundation
 import Virtualization
 import Semaphore
 import Dynamic
+import VirtualizationPrivate
 
 struct UnsupportedRestoreImageError: Error {
 }
@@ -63,7 +64,7 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
     // Initialize the virtual machine and its configuration
     self.network = network
     configuration = try Self.craftConfiguration(diskURL: vmDir.diskURL,
-                                                nvramURL: vmDir.nvramURL, romURL: vmDir.romURL, vmConfig: config,
+                                                nvramURL: vmDir.nvramURL, romURL: vmDir.romURL, sepromURL: vmDir.sepromURL, vmConfig: config,
                                                 network: network, additionalStorageDevices: additionalStorageDevices,
                                                 directorySharingDevices: directorySharingDevices,
                                                 serialPorts: serialPorts,
@@ -143,6 +144,7 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
       ipswURL: URL,
       diskSizeGB: UInt16,
       romURL: URL,
+      sepromURL: URL,
       network: Network = NetworkShared(),
       additionalStorageDevices: [VZStorageDeviceConfiguration] = [],
       directorySharingDevices: [VZDirectorySharingDeviceConfiguration] = [],
@@ -191,10 +193,13 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
       // Copy ROM
       try FileManager.default.copyItem(atPath: romURL.path, toPath: vmDir.romURL.path)
 
+      // Copy SEP ROM
+      try FileManager.default.copyItem(atPath: sepromURL.path, toPath: vmDir.sepromURL.path)
+
       // Initialize the virtual machine and its configuration
       self.network = network
       configuration = try Self.craftConfiguration(diskURL: vmDir.diskURL, nvramURL: vmDir.nvramURL,
-                                                  romURL: vmDir.romURL, vmConfig: config, network: network,
+                                                  romURL: vmDir.romURL, sepromURL: vmDir.sepromURL, vmConfig: config, network: network,
                                                   additionalStorageDevices: additionalStorageDevices,
                                                   directorySharingDevices: directorySharingDevices,
                                                   serialPorts: serialPorts
@@ -299,10 +304,33 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
     try await self.virtualMachine.stop()
   }
 
+  // vzHardwareModel derives the VZMacHardwareModel config specific to the "platform type"
+  // of the VM (currently only vresearch101 supported)
+  static private func vzHardwareModel_VRESEARCH101() throws -> VZMacHardwareModel {
+    var hw_model: VZMacHardwareModel
+
+    guard let hw_descriptor = _VZMacHardwareModelDescriptor() else {
+      fatalError("Failed to create hardware descriptor")
+    }
+    hw_descriptor.setPlatformVersion(3)
+    // hw_descriptor.setISA(.appleInternal4)
+    hw_descriptor.setBoardID(0x90)
+    hw_descriptor.setISA(2)
+    // hw_model = VZMacHardwareModel._hardwareModel(with: hw_descriptor) as! VZMacHardwareModel
+    hw_model = VZMacHardwareModel._hardwareModel(withDescriptor: hw_descriptor)
+
+    guard hw_model.isSupported else {
+        fatalError("VM hardware config not supported (model.isSupported = false)")
+    }
+
+    return hw_model
+  }
+
   static func craftConfiguration(
     diskURL: URL,
     nvramURL: URL,
     romURL: URL,
+    sepromURL: URL? = nil,
     vmConfig: VMConfig,
     network: Network = NetworkShared(),
     additionalStorageDevices: [VZStorageDeviceConfiguration],
@@ -315,22 +343,100 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
     sync: VZDiskImageSynchronizationMode = .full,
     caching: VZDiskImageCachingMode? = nil
   ) throws -> VZVirtualMachineConfiguration {
-    let configuration = VZVirtualMachineConfiguration()
+    let configuration: VZVirtualMachineConfiguration = .init()
+    // let configuration = VZVirtualMachineConfiguration()
 
     // Boot loader
     let bootloader = try vmConfig.platform.bootLoader(nvramURL: nvramURL)
     Dynamic(bootloader)._setROMURL(romURL)
     configuration.bootLoader = bootloader
 
-    // CPU and memory
-    configuration.cpuCount = vmConfig.cpuCount
-    configuration.memorySize = vmConfig.memorySize
+    // SEP ROM
+    let homeURL = FileManager.default.homeDirectoryForCurrentUser
+    var sepstoragePath = homeURL.appendingPathComponent(".tart/vms/vphone/SEPStorage").path
+    let sepstorageURL = URL(fileURLWithPath: sepstoragePath)
+    let sep_config = Dynamic._VZSEPCoprocessorConfiguration(storageURL: sepstorageURL)
+    if let sepromURL { // default AVPSEPBooter.vresearch1.bin from VZ framework
+        print("!!!vsepstorageURL !!!: \(sepstorageURL)")
+        sep_config.romBinaryURL = sepromURL
+    }
+    sep_config.debugStub = Dynamic._VZGDBDebugStubConfiguration(port: 8001)
+    // configuration._setCoprocessors([sep_config])
+    configuration._setCoprocessors([sep_config.asObject])
+    
+
+
+    // Some vresearch101 config
+    let pconf = VZMacPlatformConfiguration()
+    pconf.hardwareModel = try vzHardwareModel_VRESEARCH101()
+
+    // Set specified ECID and serialNumber?
+    let serial = Dynamic._VZMacSerialNumber.initWithString("AAAAAA1337")
+    // self.dynamicSerial = serial
+    let identifier = Dynamic.VZMacMachineIdentifier._machineIdentifierWithECID(0x1de1518ecffe2725, serialNumber: serial.asObject)
+    pconf.machineIdentifier = identifier.asObject as! VZMacMachineIdentifier
+
+    print("pconf.machineIdentifier._ECID: \(pconf.machineIdentifier._ECID)")
+    print("pconf.machineIdentifier._serialNumber: \(pconf.machineIdentifier._serialNumber.string)")
+
+    pconf._setProductionModeEnabled(true)
+    var auxiliaryStoragePath = homeURL.appendingPathComponent(".tart/vms/vphone/nvram.bin").path
+    let auxiliaryStorageURL = URL(fileURLWithPath: auxiliaryStoragePath)
+    pconf.auxiliaryStorage = VZMacAuxiliaryStorage(url: auxiliaryStorageURL)
+
+
+
+    // let pointingDevice = VZUSBScreenCoordinatePointingDeviceConfiguration()
+    // configuration.pointingDevices = [pointingDevice]
+
+    // let trackpad = VZMacTrackpadConfiguration()
+    // configuration.pointingDevices = [trackpad]
+
+    if #available(macOS 14, *) {
+      let keyboard = VZUSBKeyboardConfiguration()
+      configuration.keyboards = [keyboard]
+
+      // let keyboard = VZMacKeyboardConfiguration()
+      // configuration.keyboards = [keyboard]
+    }
+
+    if #available(macOS 14, *) {
+      let touch = _VZUSBTouchScreenConfiguration()
+      configuration._setMultiTouchDevices([touch])
+
+      // let touch = _VZAppleTouchScreenConfiguration()
+      // configuration._setMultiTouchDevices([touch])
+    }
+
+    // if #available(macOS 14, *) {
+    //   let mouse = _VZUSBMouseConfiguration()
+    //   if let mouse = _VZUSBMouseConfiguration() {
+    //     configuration.pointingDevices = [mouse]
+    //   }
+    // }
+
+    // CPU and memory (6core cpu, 4gb ram)
+    configuration.cpuCount = 6;//vmConfig.cpuCount
+    configuration.memorySize = 4294967296;//4gb vmConfig.memorySize
+
+    // CPU and memory (8core cpu, 8gb ram)
+    // configuration.cpuCount = 8;
+    // configuration.memorySize = 8589934592;
 
     // Platform
-    configuration.platform = try vmConfig.platform.platform(nvramURL: nvramURL, needsNestedVirtualization: nested)
+    // configuration.platform = try vmConfig.platform.platform(nvramURL: nvramURL, needsNestedVirtualization: nested)
+    configuration.platform = pconf
 
     // Display
-    configuration.graphicsDevices = [vmConfig.platform.graphicsDevice(vmConfig: vmConfig)]
+    // configuration.graphicsDevices = [vmConfig.platform.graphicsDevice(vmConfig: vmConfig)]
+    let graphics_config = VZMacGraphicsDeviceConfiguration()
+    let displays_config = VZMacGraphicsDisplayConfiguration(
+        widthInPixels: 1179,
+        heightInPixels: 2556,
+        pixelsPerInch: 460
+    )
+    graphics_config.displays.append(displays_config)
+    configuration.graphicsDevices = [graphics_config]
 
     // Audio
     let soundDeviceConfiguration = VZVirtioSoundDeviceConfiguration()
@@ -351,13 +457,13 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
     configuration.audioDevices = [soundDeviceConfiguration]
 
     // Keyboard and mouse
-    if suspendable, let platformSuspendable = vmConfig.platform.self as? PlatformSuspendable {
-      configuration.keyboards = platformSuspendable.keyboardsSuspendable()
-      configuration.pointingDevices = platformSuspendable.pointingDevicesSuspendable()
-    } else {
-      configuration.keyboards = vmConfig.platform.keyboards()
-      configuration.pointingDevices = vmConfig.platform.pointingDevices()
-    }
+    // if suspendable, let platformSuspendable = vmConfig.platform.self as? PlatformSuspendable {
+    //   configuration.keyboards = platformSuspendable.keyboardsSuspendable()
+    //   configuration.pointingDevices = platformSuspendable.pointingDevicesSuspendable()
+    // } else {
+    //   configuration.keyboards = vmConfig.platform.keyboards()
+    //   configuration.pointingDevices = vmConfig.platform.pointingDevices()
+    // }
 
     // Networking
     configuration.networkDevices = network.attachments().map {
@@ -421,13 +527,13 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
     let debugStub = Dynamic._VZGDBDebugStubConfiguration(port: vmConfig.debugPort);
     Dynamic(configuration)._setDebugStub(debugStub);
 
-    // // Serial console
-    // let serialPort: VZSerialPortConfiguration = Dynamic._VZPL011SerialPortConfiguration().asObject as! VZSerialPortConfiguration
-    // serialPort.attachment = VZFileHandleSerialPortAttachment(
-    //   fileHandleForReading: FileHandle.standardInput,
-    //   fileHandleForWriting: FileHandle.standardOutput
-    // )
-    // configuration.serialPorts = [serialPort]
+    // Serial console
+    let serialPort: VZSerialPortConfiguration = Dynamic._VZPL011SerialPortConfiguration().asObject as! VZSerialPortConfiguration
+    serialPort.attachment = VZFileHandleSerialPortAttachment(
+      fileHandleForReading: FileHandle.standardInput,
+      fileHandleForWriting: FileHandle.standardOutput
+    )
+    configuration.serialPorts = [serialPort]
       
     // Panic device (needed on macOS 14+ when setPanicAction is enabled)
     if #available(macOS 14, *) {

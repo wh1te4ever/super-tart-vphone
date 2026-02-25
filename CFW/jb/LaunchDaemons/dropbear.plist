@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>CFBundleIdentifier</key>
+        <string>com.apple.dropbear</string>
+        <key>EnablePressuredExit</key>
+        <false/>
+        <key>EnableTransactions</key>
+        <false/>
+        <key>HighPriorityIO</key>
+        <true/>
+        <key>KeepAlive</key>
+        <true/>
+        <key>Label</key>
+        <string>Dropbear</string>
+        <key>POSIXSpawnType</key>
+        <string>Interactive</string>
+        <key>ProgramArguments</key>
+        <array>
+    		<string>/iosbinpack64/usr/local/bin/dropbear</string>
+    		<string>--shell</string>
+    		<string>/iosbinpack64/bin/bash</string>
+    		<string>-R</string>
+    		<string>-E</string>
+                <string>-F</string>
+                <string>-p</string>
+		<string>22222</string>
+		<string>-a</string>
+    	</array>
+        <key>RunAtLoad</key>
+        <true/>
+        <key>Umask</key>
+        <integer>0</integer>
+        <key>UserName</key>
+        <string>root</string>
+</dict>
+</plist>

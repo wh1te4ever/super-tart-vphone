@@ -27,7 +27,10 @@ struct VMDirectory: Prunable {
     baseURL.appendingPathComponent("manifest.json")
   }
   var romURL: URL {
-    baseURL.appendingPathComponent("AVPBooter.vmapple2.bin")
+    baseURL.appendingPathComponent("AVPBooter.vresearch1.bin")
+  }
+  var sepromURL: URL {
+    baseURL.appendingPathComponent("AVPSEPBooter.vresearch1.bin")
   }
 
   var explicitlyPulledMark: URL {
@@ -91,7 +94,8 @@ struct VMDirectory: Prunable {
     FileManager.default.fileExists(atPath: configURL.path) &&
       FileManager.default.fileExists(atPath: diskURL.path) &&
       FileManager.default.fileExists(atPath: nvramURL.path) &&
-      FileManager.default.fileExists(atPath: romURL.path)
+      FileManager.default.fileExists(atPath: romURL.path) &&
+      FileManager.default.fileExists(atPath: sepromURL.path)
   }
 
   func initialize(overwrite: Bool = false) throws {

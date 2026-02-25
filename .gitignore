@@ -19,3 +19,8 @@ dist/
 
 # mkdocs-material
 site
+CFW/.DS_Store
+CFW/custom_26.1/AppleParavirtGPUMetalIOGPUFamily.tar
+CFW/libAppleParavirtCompilerPluginIOGPUFamily/main.m
+CFW/libAppleParavirtCompilerPluginIOGPUFamily/.DS_Store
+.DS_Store

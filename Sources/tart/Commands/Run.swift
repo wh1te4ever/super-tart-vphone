@@ -392,17 +392,25 @@ struct Run: AsyncParsableCommand {
       sync: VZDiskImageSynchronizationMode(diskOptions.syncModeRaw),
       caching: VZDiskImageCachingMode(diskOptions.cachingModeRaw)
     )
+    
 
     let vncImpl: VNC? = try {
       if vnc {
         let vmConfig = try VMConfig.init(fromURL: vmDir.configURL)
-        return ScreenSharingVNC(vmConfig: vmConfig)
+        
+        let screenSharingInstance = ScreenSharingVNC(vmConfig: vmConfig)
+        
+        screenSharingInstance.setVirtualMachine(vm!.virtualMachine)
+        
+        return screenSharingInstance
+        
       } else if vncExperimental {
         return FullFledgedVNC(virtualMachine: vm!.virtualMachine)
       } else {
         return nil
       }
     }()
+    
 
     // Lock the VM
     //
@@ -487,7 +495,9 @@ struct Run: AsyncParsableCommand {
             print("VNC server is running at \(vncURL)")
           } else {
             print("Opening \(vncURL)...")
-            NSWorkspace.shared.open(vncURL)
+            if vncExperimental {
+              NSWorkspace.shared.open(vncURL)
+            }
           }
         }
 

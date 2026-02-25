@@ -1,0 +1,9 @@
+Package: kr.h4ck.fakedeviceinfo
+Name: FakeDeviceInfo
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: An awesome MobileSubstrate tweak!
+Maintainer: seo
+Author: seo
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000)

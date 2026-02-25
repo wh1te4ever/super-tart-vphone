@@ -8,5 +8,7 @@
 	<true/>
 	<key>com.apple.private.virtualization</key>
 	<true/>
+	<key>com.apple.private.virtualization.security-research</key>
+	<true/>
 </dict>
 </plist>
